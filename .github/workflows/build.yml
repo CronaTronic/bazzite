@@ -56,15 +56,6 @@ jobs:
       matrix:
         image:
           - bazzite
-          - bazzite-gnome
-          - bazzite-deck
-          - bazzite-deck-gnome
-          - bazzite-deck-nvidia
-          - bazzite-deck-nvidia-gnome
-          - bazzite-nvidia
-          - bazzite-gnome-nvidia
-          - bazzite-nvidia-open
-          - bazzite-gnome-nvidia-open
         include:
           - fedora_version: 43
             kernel_flavor: ogc
@@ -219,12 +210,12 @@ jobs:
           # Kernel & akmods
           #
           AKMODS_TAG="${{ steps.base.outputs.akmods_tag }}"
-          sudo podman pull ghcr.io/ublue-os/akmods:${AKMODS_TAG}
-          # sudo podman pull ghcr.io/ublue-os/akmods-extra:${AKMODS_TAG}
+          sudo podman pull ghcr.io/cronatronic/akmods:${AKMODS_TAG}
+          # sudo podman pull ghcr.io/cronatronic/akmods-extra:${AKMODS_TAG}
 
           if [ "${{ steps.base.outputs.install_nvidia }}" == "true" ]; then
             NVIDIA_FLAVOR="${{ steps.base.outputs.nvidia_flavor }}"
-            sudo podman pull "ghcr.io/ublue-os/akmods-${NVIDIA_FLAVOR}:${AKMODS_TAG}"
+            sudo podman pull "ghcr.io/cronatronic/akmods-${NVIDIA_FLAVOR}:${AKMODS_TAG}"
           fi
 
 
@@ -495,24 +486,3 @@ jobs:
           subject-digest: ${{ steps.get-digest.outputs.digest }}
           push-to-registry: true
 
-  generate_release:
-    name: Generate Release
-    needs: [push-ghcr]
-    if: github.event_name != 'pull_request'
-    permissions:
-      contents: write
-    secrets: inherit
-    uses: ./.github/workflows/generate_release.yml
-
-  kickoff_bazzite_dx:
-    runs-on: ubuntu-24.04
-    needs: [generate_release]
-    if: github.action_repository == 'ublue-os/bazzite' && github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    steps:
-      - name: Kickoff Bazzite-DX
-        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4
-        continue-on-error: true
-        with:
-          token: ${{ secrets.PAT }}
-          repository: ublue-os/bazzite-dx
-          event-type: build
